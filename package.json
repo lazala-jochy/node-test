@@ -1,0 +1,15 @@
+{
+  "name": "testgorilla-node-ts-practice",
+  "version": "1.0.0",
+  "private": true,
+  "description": "20 ejercicios de practica para la seccion de codigo del test de Alegra (Backend Node.js/TypeScript) en TestGorilla",
+  "scripts": {
+    "test:all": "for d in practice/*/; do echo \"\\n=== $d ===\"; npx ts-node \"$d/solution.test.ts\" || true; done",
+    "test": "npx ts-node"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}
