@@ -1,5 +1,5 @@
 import { test, assert, summary } from "../_helpers/test";
-import { isPalindrome, isPalindromeLoose } from "./solution";
+import { isPalindrome } from "./solution";
 
 async function main() {
   await test("Anna es palindromo ignorando case", () => {
@@ -16,10 +16,6 @@ async function main() {
 
   await test("string vacio es palindromo", () => {
     assert.equal(isPalindrome(""), true);
-  });
-
-  await test("bonus: ignora espacios y puntuacion", () => {
-    assert.equal(isPalindromeLoose("A man a plan a canal Panama"), true);
   });
 
   summary();

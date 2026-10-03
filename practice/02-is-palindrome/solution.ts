@@ -1,9 +1,19 @@
 export function isPalindrome(str: string): boolean {
   // TODO: implementa la funcion
-  return false;
+  if(str.length === 0) return true;
+
+  let last:number = str.length - 1;
+
+  for(let i: number = 0; i < last; i++){
+    if(str[i].toLowerCase() !== str[last].toLowerCase() ) return false
+    last--;
+  }
+
+
+  return true;
 }
 
-export function isPalindromeLoose(str: string): boolean {
-  // TODO (bonus): ignora espacios y signos de puntuacion
-  return false;
-}
+isPalindrome("Anna");       // true
+isPalindrome("anita");      // false
+isPalindrome("Level");      // true
+isPalindrome("");

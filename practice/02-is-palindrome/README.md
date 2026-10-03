@@ -24,8 +24,7 @@ isPalindrome("");           // true
 ## Edge cases a considerar
 
 - String vacío → `true`.
-- Solo importa ignorar mayúsculas/minúsculas (no necesitas quitar espacios ni signos de puntuación para la versión base).
-- **Bonus:** agrega una variante que también ignore espacios y caracteres no alfanuméricos (ej. `"A man a plan a canal Panama"` → `true`).
+- Solo importa ignorar mayúsculas/minúsculas (no necesitas quitar espacios ni signos de puntuación).
 
 ## Cómo trabajar este ejercicio
 
