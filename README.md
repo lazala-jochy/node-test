@@ -2013,6 +2013,18 @@ app.get('/users/:id', async (req, res) => {
 5. Write a function `toSlug(title)` that converts `"Hello World!"` into `"hello-world"`.
 6. Write a function `pick(obj, keys)` that returns a new object with only the specified keys.
 7. Write a function `groupByKey(items, key)` that groups an array of objects by a given property.
+   ```js
+   const users = [
+     { id: 1, role: "admin" },
+     { id: 2, role: "user" },
+     { id: 3, role: "admin" },
+   ];
+   groupByKey(users, "role");
+   // {
+   //   admin: [{ id: 1, role: "admin" }, { id: 3, role: "admin" }],
+   //   user: [{ id: 2, role: "user" }]
+   // }
+   ```
 8. Write a function `isValidEmail(email)` using a simple regex check.
 9. Write a function `delay(ms)` that returns a Promise resolving after `ms` milliseconds.
 10. Write a function `safeParseJSON(str)` that returns the parsed object, or `null` if parsing fails (don't throw).
