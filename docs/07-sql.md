@@ -165,26 +165,66 @@ COMMIT; -- o ROLLBACK si algo falla
 
 ## 7.7 Concurrencia: Locking e Isolation Levels
 
-| Concepto | Diferencia | Cuándo usar |
-|---|---|---|
-| **Optimistic locking** | No bloquea; usa columna `version`, falla y reintenta si cambió | Baja probabilidad de conflicto |
-| **Pessimistic locking** | Bloquea la fila (`SELECT ... FOR UPDATE`) | Alta probabilidad de conflicto (balances financieros) |
+Cuando dos transacciones intentan tocar la misma fila al mismo tiempo, hay dos estrategias opuestas para evitar que se pisen: bloquear de entrada (pesimista) o dejar avanzar y verificar al final (optimista).
+
+### Optimistic vs Pessimistic locking
+
+| Concepto | Cómo funciona | Costo | Cuándo usar |
+|---|---|---|---|
+| **Optimistic locking** | No bloquea nada; cada fila tiene una columna `version` (o `updated_at`). Al leer, guardas la versión; al escribir, actualizas **solo si** la versión sigue igual. Si alguien más escribió antes, el `UPDATE` afecta 0 filas y el cliente debe reintentar (releer + reintentar la operación) | Barato mientras no hay conflicto, pero requiere lógica de reintento en la aplicación | Baja probabilidad de conflicto: ediciones de perfil, carritos, formularios donde dos usuarios casi nunca chocan |
+| **Pessimistic locking** | Bloquea la fila desde que la lees con `SELECT ... FOR UPDATE` hasta el `COMMIT`/`ROLLBACK`. Cualquier otra transacción que intente leer-para-modificar esa misma fila **espera** en vez de fallar | Más seguro, pero reduce el throughput porque otras transacciones quedan en espera | Alta probabilidad de conflicto, o cuando un conflicto no detectado sería grave: transferencias bancarias, descuento de stock/balances |
 
 ```sql
--- Pessimistic: bloquea la fila hasta el COMMIT, otra transacción debe esperar
+-- Pessimistic: bloquea la fila hasta el COMMIT, otra transacción que haga FOR UPDATE sobre
+-- la misma fila debe esperar a que esta termine (no puede leerla "para modificar" mientras tanto)
 BEGIN;
 SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
 UPDATE accounts SET balance = balance - 100 WHERE id = 1;
 COMMIT;
 
--- Optimistic: no bloquea; falla si "version" cambió desde que se leyó, y el cliente reintenta
+-- Optimistic: no bloquea nada; se asume que no habrá conflicto y se valida al escribir.
+-- Si "version" sigue siendo 7, actualiza y la sube a 8. Si alguien más ya la cambió
+-- (version ya es 8 o más), el WHERE no matchea ninguna fila:
 UPDATE accounts SET balance = balance - 100, version = version + 1
 WHERE id = 1 AND version = 7;  -- 0 filas afectadas ⇒ alguien más la modificó primero, reintentar
 ```
 
-**Isolation levels** (menor a mayor aislamiento): `Read Uncommitted` → `Read Committed` → `Repeatable Read` → `Serializable`.
+### Isolation levels
 
-**Deadlock:** dos transacciones se bloquean mutuamente esperando un lock que la otra tiene — el motor detecta y aborta una.
+Definen qué tanto "se pueden ver" entre sí las transacciones que corren al mismo tiempo. A menor aislamiento, mejor performance pero más anomalías posibles; a mayor aislamiento, más seguridad pero más bloqueos/reintentos.
+
+| Nivel | Qué permite ver | Anomalía que evita respecto al anterior |
+|---|---|---|
+| **Read Uncommitted** | Puede leer cambios de otras transacciones que **todavía no hicieron `COMMIT`** | — (nivel más permisivo; casi nadie lo usa en producción) |
+| **Read Committed** (default en Postgres) | Solo ve datos ya confirmados (`COMMIT`eados) de otras transacciones | Evita **dirty read**: leer un dato que otra transacción luego hace `ROLLBACK` |
+| **Repeatable Read** | Si lees la misma fila dos veces dentro de la misma transacción, obtienes siempre el mismo valor | Evita **non-repeatable read**: que un mismo `SELECT` repetido dentro de la transacción devuelva valores distintos porque otra transacción commiteó un cambio en el medio |
+| **Serializable** | El resultado es como si las transacciones se hubieran ejecutado una tras otra, nunca en paralelo | Evita **phantom read**: que una consulta por rango (ej. `WHERE status = 'pending'`) devuelva filas nuevas que otra transacción insertó en el medio |
+
+```sql
+-- Ejemplo de dirty read que Read Committed evita:
+-- Transacción A                          Transacción B
+BEGIN;                                    BEGIN;
+UPDATE accounts SET balance = 0
+  WHERE id = 1;
+                                           SELECT balance FROM accounts WHERE id = 1; -- ¿ve 0 o el valor viejo?
+ROLLBACK;                                 -- con Read Uncommitted, B ya leyó un balance que nunca existió realmente
+```
+
+### Deadlock
+
+Ocurre cuando dos transacciones se bloquean **mutuamente**: A tiene el lock que B necesita, y B tiene el lock que A necesita, así que ninguna puede avanzar.
+
+```sql
+-- Transacción A                          Transacción B
+BEGIN;                                    BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;  -- A bloquea fila 1
+                                           UPDATE accounts SET balance = balance - 50 WHERE id = 2;  -- B bloquea fila 2
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;  -- A espera el lock de B sobre fila 2
+                                           UPDATE accounts SET balance = balance + 50 WHERE id = 1;  -- B espera el lock de A sobre fila 1
+-- ambas quedan esperando para siempre: el motor detecta el ciclo y aborta una de las dos (la otra continúa)
+```
+
+La forma más simple de prevenirlo en la aplicación es **siempre adquirir los locks en el mismo orden** (ej. por `id` ascendente) en todas las transacciones que tocan varias filas.
 
 **🔥🔥🔥🔥**
 
