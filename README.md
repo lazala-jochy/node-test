@@ -8,43 +8,6 @@
 ![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker&logoColor=white)
 ![Status](https://img.shields.io/badge/Guía-Actualizada-success)
 
-> Guía de estudio profesional para una entrevista técnica de **Backend Developer — Node.js, JavaScript, SQL y Microservicios**. Cada concepto se explica con una definición precisa, por qué importa en la práctica, y ejemplos de código cuando aportan valor.
-
-### Cómo leer cada concepto
-
-| Símbolo | Significado |
-|:---:|---|
-| **Definición** | Explicación corta y precisa |
-| 💡 | Por qué importa / contexto práctico |
-| 🧩 | Ejemplo de código |
-| ❌ / ✅ | Mala práctica vs. buena práctica |
-| 🔥 | Nivel de prioridad de estudio (1 a 5) |
-
----
-
-## 🎯 Prioridad de Estudio
-
-<table>
-<tr><th>🔴 Alta</th><th>🟡 Media</th><th>🟢 Baja</th></tr>
-<tr valign="top">
-<td>
-
-Node.js · JavaScript (closures, event loop, asincronía) · HTTP · REST · SQL (joins, transacciones, ACID) · Concurrencia · Diseño de APIs · Autenticación (JWT, hashing) · Docker (básico) · Microservicios (comunicación, resiliencia, consistencia)
-
-</td>
-<td>
-
-NoSQL/Redis · Arquitectura backend (SOLID, capas) · Message Brokers (RabbitMQ/Kafka) · Testing · Observabilidad · Patrones de diseño backend · Performance
-
-</td>
-<td>
-
-Kubernetes avanzado · Event Sourcing · CQRS a fondo · Sharding/replication de bajo nivel · Internals de V8/libuv
-
-</td>
-</tr>
-</table>
-
 ---
 
 ## Tabla de Contenidos
