@@ -32,21 +32,21 @@ sequenceDiagram
 | PATCH | ⚠️ No garantizado | Actualización parcial |
 | DELETE | ✅ | Eliminar |
 
-| Código | Nombre | Cuándo usarlo |
-|---|---|---|
-| 200 | OK | Éxito general |
-| 201 | Created | Recurso creado |
-| 204 | No Content | Éxito sin cuerpo (DELETE) |
-| 400 | Bad Request | Sintaxis inválida |
-| 401 | Unauthorized | No autenticado |
-| 403 | Forbidden | Autenticado, sin permisos |
-| 404 | Not Found | El recurso no existe |
-| 409 | Conflict | Conflicto de estado |
-| 422 | Unprocessable Entity | Datos semánticamente inválidos |
-| 429 | Too Many Requests | Rate limiting excedido |
-| 500 | Internal Server Error | Error inesperado |
-| 502 | Bad Gateway | Respuesta inválida de un upstream |
-| 503 | Service Unavailable | Servidor sobrecargado/mantenimiento |
+| Código | Nombre | Cuándo usarlo | Ejemplo |
+|---|---|---|---|
+| 200 | OK | Éxito general en una petición que devuelve datos (GET, PUT, PATCH) | `GET /users/1` devuelve el usuario con status 200 |
+| 201 | Created | Se creó un recurso nuevo exitosamente, normalmente tras un POST | `POST /users` crea un usuario y responde 201 con el nuevo recurso (y su `Location`) |
+| 204 | No Content | La operación fue exitosa pero no hay nada que devolver en el cuerpo | `DELETE /users/1` responde 204 sin body |
+| 400 | Bad Request | El cliente envió una petición mal formada o con sintaxis inválida (antes de validar reglas de negocio) | Enviar `{ "edad": "abc" }` cuando se espera un número, o un JSON malformado |
+| 401 | Unauthorized | El cliente no se autenticó (falta token o es inválido) — a pesar del nombre, es "no identificado" | Llamar a un endpoint protegido sin header `Authorization` o con un token expirado |
+| 403 | Forbidden | El cliente está autenticado, pero no tiene permisos para esa acción | Un usuario normal intenta acceder a `/admin/reportes` |
+| 404 | Not Found | El recurso solicitado no existe (o se oculta por seguridad) | `GET /users/999` cuando no existe el usuario con id 999 |
+| 409 | Conflict | La petición entra en conflicto con el estado actual del recurso | Intentar crear un usuario con un email que ya está registrado |
+| 422 | Unprocessable Entity | La sintaxis es válida (es JSON correcto), pero los datos no cumplen las reglas de negocio/validación | Enviar `{ "email": "no-es-un-email" }`: el JSON es válido pero el formato del campo no |
+| 429 | Too Many Requests | El cliente superó el límite de peticiones permitido (rate limiting) | Hacer 1000 requests/minuto a una API que limita a 100/minuto |
+| 500 | Internal Server Error | Ocurrió un error no controlado en el servidor | Una excepción sin capturar al leer una propiedad de `undefined` en el backend |
+| 502 | Bad Gateway | El servidor actuó como proxy/gateway y recibió una respuesta inválida de un servicio upstream | El API Gateway llama a un microservicio que está caído y responde con basura |
+| 503 | Service Unavailable | El servidor no puede atender la petición temporalmente (sobrecarga, mantenimiento, deploy) | El servidor está reiniciando o se alcanzó el límite de conexiones y rechaza nuevas peticiones |
 
 **🔥🔥🔥🔥🔥**
 
