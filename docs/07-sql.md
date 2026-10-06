@@ -6,18 +6,49 @@
 
 ## 7.1 SQL Fundamental
 
+SQL se organiza en comandos DML (manipular datos) y cada uno resuelve una operación distinta sobre las filas de una tabla:
+
+| Comando | Qué hace | Detalle |
+|---|---|---|
+| `SELECT` | Lee filas | `WHERE` filtra, `ORDER BY` ordena, `LIMIT`/`OFFSET` paginan |
+| `INSERT` | Crea una fila nueva | Se indican las columnas y sus valores en el mismo orden |
+| `UPDATE` | Modifica filas existentes | Sin `WHERE` actualiza **toda la tabla** — el error más común |
+| `DELETE` | Borra filas existentes | Igual que `UPDATE`, sin `WHERE` borra **toda la tabla** |
+| `DISTINCT` | Elimina duplicados del resultado | Se evalúa sobre las columnas seleccionadas, no sobre toda la fila |
+| `GROUP BY` | Agrupa filas para agregar | Normalmente junto a `COUNT`, `SUM`, etc. (ver [7.3](#73-agregaciones-where-vs-having)) |
+
 ```sql
+-- Lee: usuarios activos, los 10 más recientes, saltando los primeros 20 (página 3 de 10)
 SELECT id, name FROM users WHERE active = true ORDER BY created_at DESC LIMIT 10 OFFSET 20;
+
+-- Crea: una fila nueva en users
 INSERT INTO users (name, email) VALUES ('Ana', 'ana@mail.com');
+
+-- Modifica: solo la fila con id = 5 (el WHERE evita afectar a todos los usuarios)
 UPDATE users SET active = false WHERE id = 5;
+
+-- Borra: solo la fila con id = 5
 DELETE FROM users WHERE id = 5;
+
+-- Lee sin duplicados: lista de países únicos presentes en users
 SELECT DISTINCT country FROM users;
+
+-- Agrupa y cuenta: usuarios con más de 5 órdenes
 SELECT user_id, COUNT(*) AS total FROM orders GROUP BY user_id HAVING COUNT(*) > 5;
 ```
 
 **🔥🔥🔥🔥🔥**
 
 ## 7.2 Joins
+
+Un `JOIN` combina filas de dos tablas según una condición de relación (`ON`). La diferencia entre los tipos es **qué pasa con las filas que no tienen match** en la otra tabla:
+
+| Tipo | Qué incluye | Ejemplo |
+|---|---|---|
+| **INNER JOIN** | Solo las filas que tienen coincidencia en ambas tablas (intersección A ∩ B) | Usuarios que **sí** tienen al menos una orden |
+| **LEFT JOIN** | Todas las filas de la tabla izquierda, con `NULL` donde no hay match en la derecha | Todos los usuarios, tengan o no órdenes |
+| **RIGHT JOIN** | Todas las filas de la tabla derecha, con `NULL` donde no hay match en la izquierda | Equivalente a invertir un LEFT JOIN |
+| **FULL OUTER JOIN** | Todas las filas de ambas tablas, con `NULL` donde falte el match del otro lado (unión A ∪ B) | Todos los usuarios y todas las órdenes, se relacionen o no |
 
 ```
 INNER JOIN            LEFT JOIN              RIGHT JOIN             FULL OUTER JOIN
@@ -214,36 +245,42 @@ Sin migraciones, aplicar el mismo cambio de esquema en desarrollo, staging y pro
 <summary><b>Ver 9 queries clásicas de entrevista (duplicados, N-ésimo valor, anti-join, top N, paginación...)</b></summary>
 
 ```sql
--- Registros duplicados
+-- Registros duplicados: agrupa por email y se queda solo con los grupos de más de 1 fila
 SELECT email, COUNT(*) AS total FROM users GROUP BY email HAVING COUNT(*) > 1;
 
--- Segundo salario más alto
+-- Segundo salario más alto: excluye el máximo global y vuelve a buscar el máximo del resto
 SELECT MAX(salary) AS second_highest FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);
 
--- Usuarios sin órdenes (anti-join)
+-- Usuarios sin órdenes (anti-join): LEFT JOIN trae todos los usuarios con NULL si no hay match,
+-- y el WHERE o.id IS NULL se queda solo con los que NO encontraron ninguna orden
 SELECT u.* FROM users u LEFT JOIN orders o ON o.user_id = u.id WHERE o.id IS NULL;
 
--- Cantidad de órdenes por usuario
+-- Cantidad de órdenes por usuario: agrupa las órdenes por user_id y cuenta cuántas tiene cada uno
 SELECT user_id, COUNT(*) AS total_orders FROM orders GROUP BY user_id;
 
--- Join de varias tablas
+-- Join de varias tablas: encadena JOINs para armar una fila legible
+-- (nombre de usuario, nombre de producto, cantidad) a partir de 4 tablas relacionadas
 SELECT u.name, p.name AS product, oi.quantity
 FROM orders o
 JOIN users u ON u.id = o.user_id
 JOIN order_items oi ON oi.order_id = o.id
 JOIN products p ON p.id = oi.product_id;
 
--- Registro más reciente por grupo
+-- Registro más reciente por grupo: DISTINCT ON (user_id) se queda con una sola fila por usuario,
+-- y gracias al ORDER BY user_id, created_at DESC esa fila es la más reciente
 SELECT DISTINCT ON (user_id) * FROM orders ORDER BY user_id, created_at DESC;
 
--- Top N por grupo
+-- Top N por grupo: suma unidades vendidas por producto y se queda con los 3 productos más vendidos
 SELECT product_id, SUM(quantity) AS total_sold FROM order_items GROUP BY product_id ORDER BY total_sold DESC LIMIT 3;
 
--- Paginación offset vs cursor
+-- Paginación offset vs cursor:
+-- offset: simple pero recalcula y descarta filas en cada página (lento en tablas grandes)
 SELECT * FROM users ORDER BY id LIMIT 20 OFFSET 40;
+-- cursor: usa el último id visto como punto de partida, más eficiente para tablas grandes
 SELECT * FROM users WHERE id > :lastSeenId ORDER BY id LIMIT 20;
 
--- Valores NULL (nunca usar = NULL)
+-- Valores NULL: "= NULL" nunca matchea nada en SQL (NULL no es igual a nada, ni a sí mismo);
+-- hay que usar IS NULL / IS NOT NULL
 SELECT * FROM users WHERE phone IS NULL;
 ```
 
