@@ -60,6 +60,20 @@ return user;
 - **Redis Streams:** estructura de log append-only con persistencia y *consumer groups*, similar en concepto a Kafka pero más liviano.
 - **Distributed Lock:** usar `SET key value NX EX ttl` para que solo un proceso (de varios) ejecute una tarea crítica a la vez, con expiración automática para evitar locks "huérfanos" si el proceso muere.
 
+```javascript
+const lockId = crypto.randomUUID();
+const acquired = await redis.set('lock:generate-invoice', lockId, 'NX', 'EX', 30); // NX = solo si no existe
+
+if (!acquired) return; // otro proceso ya está generando la factura, no hacer nada
+
+try {
+  await generateMonthlyInvoice();
+} finally {
+  await redis.del('lock:generate-invoice'); // libera el lock al terminar
+}
+// si el proceso muere antes del del(), el EX 30 igual libera el lock automáticamente a los 30s
+```
+
 **🔥🔥🔥**
 
 ---

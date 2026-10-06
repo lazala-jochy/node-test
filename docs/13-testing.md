@@ -22,6 +22,21 @@
 | **Spy** | Envuelve una función real, registrando sus llamadas sin alterar su comportamiento |
 
 ```javascript
+// Stub: reemplaza sendEmail, siempre devuelve éxito — no verifica cómo fue llamada
+const sendEmailStub = () => Promise.resolve({ sent: true });
+
+// Mock: reemplaza Y verifica la interacción (con qué argumentos, cuántas veces)
+const sendEmailMock = jest.fn().mockResolvedValue({ sent: true });
+await notifyUser(user, sendEmailMock);
+expect(sendEmailMock).toHaveBeenCalledWith(user.email, 'Bienvenido'); // ← esto es lo que distingue al mock
+
+// Spy: envuelve la función REAL (no la reemplaza), solo observa las llamadas
+const spy = jest.spyOn(logger, 'info');
+await notifyUser(user, sendEmailStub);
+expect(spy).toHaveBeenCalled(); // logger.info() sigue ejecutándose de verdad
+```
+
+```javascript
 // Jest — ejemplo de Arrange / Act / Assert
 test('calcula el total con descuento', () => {
   // Arrange

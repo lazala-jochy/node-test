@@ -29,6 +29,20 @@ logger.error('payment_failed', { userId, orderId, amount, reason: 'card_declined
 
 **Métricas** clave de un servicio backend: latencia, tasa de error, throughput (requests/segundo) — típicamente recolectadas con Prometheus y visualizadas en Grafana.
 
+```javascript
+const httpRequestDuration = new prometheus.Histogram({
+  name: 'http_request_duration_seconds',
+  labelNames: ['method', 'route', 'status_code'],
+});
+
+app.use((req, res, next) => {
+  const end = httpRequestDuration.startTimer();
+  res.on('finish', () => end({ method: req.method, route: req.path, status_code: res.statusCode }));
+  next();
+});
+// Prometheus "scrapea" /metrics periódicamente y Grafana grafica p95 de latencia, tasa de error, etc.
+```
+
 ## 14.3 Distributed Tracing y Correlation ID
 
 **Definición:** un identificador único (`correlation ID` / `trace ID`) viaja con la request a través de todos los servicios que la procesan, permitiendo reconstruir el flujo completo en herramientas como Jaeger o OpenTelemetry.
@@ -53,6 +67,15 @@ El correlation ID se genera normalmente en el API Gateway y se propaga en los he
 - **APM** (Application Performance Monitoring): herramientas (Datadog APM, New Relic) que correlacionan latencia, errores y trazas automáticamente.
 - **Error Tracking:** captura y agrupa excepciones en producción con contexto (Sentry, Bugsnag).
 - **Alerting:** notificaciones automáticas cuando una métrica cruza un umbral (ej. tasa de error > 5%).
+
+```javascript
+app.get('/health', async (req, res) => {
+  const dbOk = await db.ping().catch(() => false);
+  if (!dbOk) return res.status(503).json({ status: 'unhealthy', db: false });
+  res.json({ status: 'healthy' });
+});
+// Kubernetes llama a este endpoint periódicamente: si falla, deja de enviarle tráfico al pod
+```
 
 **🔥🔥🔥**
 

@@ -23,11 +23,23 @@
 
 **Cuándo NO usarlos:** equipos pequeños, producto en etapa temprana (el dominio aún cambia mucho), sin experiencia operando sistemas distribuidos — un monolito modular suele ser más rápido de construir y mantener.
 
+**Ejemplo concreto — una tienda online:**
+- **Monolito:** un único proceso Express con carpetas `/users`, `/orders`, `/payments`, todas contra la misma base de datos — un solo `npm run deploy` actualiza todo.
+- **Microservicios:** `users-service`, `orders-service` y `payments-service` corren como procesos separados, cada uno con su propia base de datos, desplegables y escalables de forma independiente (ej. `payments-service` puede tener 10 réplicas en Black Friday mientras `users-service` se queda con 2).
+
 **🔥🔥🔥🔥🔥**
 
 ## 10.2 Service Decomposition y Bounded Context
 
 **Definición:** dividir el sistema según límites de dominio de negocio (bounded contexts, ver [sección 9.3](09-arquitectura-backend.md#93-domain-driven-design-ddd-y-bounded-context)), no según capas técnicas. Un buen límite de servicio agrupa datos y lógica que cambian juntos, minimizando llamadas cruzadas constantes entre servicios.
+
+```
+❌ Dividir por capa técnica: "frontend-api-service", "database-service", "validation-service"
+   → casi cada feature nueva toca los tres servicios a la vez (alto acoplamiento)
+
+✅ Dividir por dominio de negocio: "orders-service", "inventory-service", "payments-service"
+   → una feature de "cancelar orden" vive mayormente dentro de orders-service
+```
 
 ## 10.3 Database per Service vs Shared Database
 
@@ -35,6 +47,19 @@
 |---|---|---|
 | **Database per service** | Cada servicio evoluciona su esquema independientemente | Requiere Saga/eventos para consistencia entre servicios |
 | **Shared database** | Más simple al inicio, JOINs cross-dominio triviales | Acopla fuertemente los servicios — anti-patrón en microservicios |
+
+```
+❌ Shared database:
+   orders-service ──┐
+   payments-service ─┼──> [ misma base de datos: tabla orders, tabla payments ]
+   inventory-service ┘       (cualquier servicio puede leer/escribir cualquier tabla)
+
+✅ Database per service:
+   orders-service     ──> [ orders_db ]
+   payments-service   ──> [ payments_db ]
+   inventory-service  ──> [ inventory_db ]
+   (si payments-service necesita datos de una orden, los pide vía API o los recibe por evento)
+```
 
 **🔥🔥🔥🔥**
 

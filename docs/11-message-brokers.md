@@ -16,6 +16,17 @@
 | **Acknowledgement (ACK)** | El consumer confirma al broker que procesó el mensaje con éxito |
 | **Message Ordering** | Garantía (o no) de que los mensajes se procesan en el mismo orden en que se publicaron |
 
+```javascript
+// Producer: publica un EVENTO — algo que ya ocurrió, otros servicios deciden si reaccionar
+await broker.publish('order.created', { orderId: 42, total: 99.90 });
+
+// Consumer: procesa el mensaje y confirma (ACK) solo si terminó con éxito
+broker.subscribe('order.created', async (message) => {
+  await inventoryService.reserveStock(message.orderId);
+  message.ack(); // sin ACK, el broker reintentará entregar este mensaje más tarde
+});
+```
+
 ## 11.2 Garantías de Entrega
 
 | Garantía | Qué significa | Riesgo |
@@ -74,6 +85,24 @@ flowchart LR
 ## 11.6 Dead Letter Queue
 
 **Definición:** cola secundaria donde se envían mensajes que fallaron repetidamente al procesarse (tras N reintentos), para que no bloqueen indefinidamente la cola principal y puedan inspeccionarse/reprocesarse manualmente.
+
+```javascript
+broker.subscribe('payment.process', async (message) => {
+  try {
+    await chargeCard(message.payload);
+    message.ack();
+  } catch (err) {
+    if (message.deliveryCount >= 5) {
+      await deadLetterQueue.send(message); // mensaje "envenenado": lo sacamos de la cola principal
+      message.ack();
+    } else {
+      message.nack(); // reintentar más tarde
+    }
+  }
+});
+```
+
+Sin DLQ, un mensaje que siempre falla (ej. datos corruptos) bloquearía el procesamiento de **todos** los mensajes detrás de él en la misma cola.
 
 **🔥🔥🔥**
 

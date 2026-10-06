@@ -13,6 +13,8 @@
 | **Response Time** | Tiempo total percibido por el cliente (incluye red) |
 | **Bottleneck** | El componente más lento que limita el rendimiento general del sistema |
 
+**Ejemplo:** un endpoint responde en 200ms por request (latencia) y el servidor soporta 50 requests/segundo en paralelo (throughput). Si una query a la base de datos sin índice tarda 150ms de esos 200ms, esa query es el *bottleneck* — optimizarla primero da más beneficio que optimizar cualquier otra parte del endpoint.
+
 ## 15.2 Causas Comunes de Degradación
 
 ```javascript

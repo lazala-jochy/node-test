@@ -49,6 +49,33 @@ CMD ["node", "dist/index.js"]
 | **Liveness Probe** | ¿El contenedor sigue vivo? Si falla, Kubernetes lo reinicia |
 | **Readiness Probe** | ¿El contenedor está listo para recibir tráfico? Si falla, se le deja de enviar tráfico sin reiniciarlo |
 
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api-backend }
+spec:
+  replicas: 3                                  # 3 Pods corriendo en paralelo
+  template:
+    spec:
+      containers:
+        - name: api
+          image: myregistry/api-backend:1.4.0
+          envFrom:
+            - configMapRef: { name: api-config }    # variables no sensibles
+            - secretRef: { name: api-secrets }       # credenciales
+          readinessProbe:
+            httpGet: { path: /health, port: 3000 }   # ¿listo para recibir tráfico?
+          livenessProbe:
+            httpGet: { path: /health, port: 3000 }   # ¿sigue vivo? si falla, reinicia el Pod
+---
+apiVersion: v1
+kind: Service
+metadata: { name: api-backend-svc }
+spec:
+  selector: { app: api-backend }
+  ports: [{ port: 80, targetPort: 3000 }]       # balancea tráfico entre los 3 Pods
+```
+
 ## 12.3 CI/CD y Estrategias de Deployment
 
 | Estrategia | Cómo funciona |

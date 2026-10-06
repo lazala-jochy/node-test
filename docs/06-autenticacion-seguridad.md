@@ -11,6 +11,19 @@
 | **Authentication (AuthN)** | ¿Quién eres? Verificar identidad (login) |
 | **Authorization (AuthZ)** | ¿Qué puedes hacer? Verificar permisos/roles |
 
+```javascript
+app.delete('/posts/:id', authenticate, async (req, res) => {
+  // authenticate ya corrió: AuthN — confirma QUIÉN es req.user a partir del token
+  const post = await Post.findById(req.params.id);
+
+  if (post.authorId !== req.user.id) {           // AuthZ — confirma QUÉ puede hacer ESE usuario
+    return res.status(403).json({ error: 'No puedes borrar posts de otro usuario' });
+  }
+  await post.delete();
+  res.sendStatus(204);
+});
+```
+
 ## 6.2 JWT (JSON Web Token)
 
 **Definición:** estructura `header.payload.signature` codificada en Base64URL. **El payload NO está encriptado, solo firmado** — cualquiera puede decodificarlo y leerlo, por eso nunca debe contener datos sensibles.
@@ -24,6 +37,13 @@
 ## 6.3 OAuth 2.0
 
 **Definición:** protocolo de autorización delegada — permite que una app acceda a recursos de un usuario en otro servicio (ej. "Iniciar sesión con Google") sin manejar sus credenciales directamente, usando tokens de acceso emitidos por el proveedor.
+
+**Flujo simplificado ("Iniciar sesión con Google"):**
+1. Tu app redirige al usuario a Google con tu `client_id` y los permisos que pides (`scope`).
+2. El usuario aprueba en la pantalla de Google — tu app **nunca ve su contraseña**.
+3. Google redirige de vuelta con un `authorization code` de un solo uso.
+4. Tu backend intercambia ese código por un `access_token` llamando directamente a Google (server-to-server).
+5. Tu app usa ese `access_token` para pedir datos del usuario (ej. su email) a la API de Google.
 
 ## 6.4 Password Hashing — bcrypt / Argon2
 
@@ -58,6 +78,18 @@ app.delete('/users/:id', requireRole('admin'), deleteUser);
 | **SQL Injection** | Inyectar SQL malicioso vía input no sanitizado | Queries parametrizadas / prepared statements, ORMs |
 | **NoSQL Injection** | Inyectar operadores de query (ej. `{"$gt": ""}`) vía input no validado en MongoDB | Validar tipos estrictamente, no pasar `req.body` crudo a la query |
 | **SSRF** | El servidor es inducido a hacer una request a una URL interna/maliciosa controlada por el atacante | Validar/whitelistear hosts destino |
+
+```javascript
+// ❌ XSS: si comment contiene "<script>robarCookies()</script>", se ejecuta en el navegador de otro usuario
+el.innerHTML = `<p>${comment}</p>`;
+// ✅ se renderiza como texto plano, el script nunca se ejecuta
+el.textContent = comment;
+
+// ❌ SQL Injection: el input del usuario se concatena directo en la query
+db.query(`SELECT * FROM users WHERE email = '${email}'`);
+// ✅ query parametrizada: el driver escapa el valor, nunca se interpreta como SQL
+db.query('SELECT * FROM users WHERE email = $1', [email]);
+```
 
 **🔥🔥🔥🔥🔥**
 

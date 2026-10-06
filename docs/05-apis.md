@@ -30,11 +30,44 @@ Separar la lógica de negocio en un Service en vez de escribirla en el Controlle
 
 ## 5.3 Validación, Sanitización y Serialización
 
-**Request validation:** siempre validar en el servidor, nunca confiar solo en el cliente. **Serialización:** convertir un objeto interno a JSON, ocultando campos sensibles (`passwordHash`). **Deserialización:** el proceso inverso al recibir un request.
+**Request validation:** siempre validar en el servidor, nunca confiar solo en el cliente, aunque el frontend ya valide. **Serialización:** convertir un objeto interno a JSON, ocultando campos sensibles (`passwordHash`). **Deserialización:** el proceso inverso al recibir un request.
+
+```javascript
+const schema = z.object({ email: z.string().email(), age: z.number().min(18) });
+
+app.post('/users', (req, res) => {
+  const result = schema.safeParse(req.body);      // ← validación: ¿la forma del request es correcta?
+  if (!result.success) return res.status(422).json(result.error);
+
+  const user = await createUser(result.data);
+  res.status(201).json(serializeUser(user));        // ← serialización: oculta campos internos
+});
+
+function serializeUser(user) {
+  const { passwordHash, ...safe } = user;           // ❌ sin esto, passwordHash viajaría en la respuesta
+  return safe;
+}
+```
 
 ## 5.4 API Contracts, OpenAPI/Swagger
 
 **Definición:** OpenAPI (antes Swagger) describe formalmente una API — endpoints, parámetros, schemas de request/response — permitiendo generar documentación interactiva y clientes automáticamente. Un **API contract** formaliza lo que el consumidor puede esperar, independiente de la implementación interna.
+
+```yaml
+# openapi.yaml — describe el endpoint sin necesidad de leer el código fuente
+/users/{id}:
+  get:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    responses:
+      '200':
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/User' }
+      '404': { description: Usuario no encontrado }
+```
+
+Con este contrato, herramientas como Swagger UI generan documentación interactiva, y el equipo frontend puede generar un cliente tipado sin esperar a que el backend esté terminado.
 
 ## 5.5 Webhooks
 

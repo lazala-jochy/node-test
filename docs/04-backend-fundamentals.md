@@ -52,7 +52,21 @@ sequenceDiagram
 
 ## 4.3 JSON, Cookies, Sessions
 
-**JSON:** formato estándar de intercambio de datos. **Cookies:** pequeños datos que el navegador envía automáticamente en cada request al mismo dominio. **Sessions:** estado del usuario guardado en el servidor, referenciado por un ID en una cookie — alternativa stateful a JWT (ver [tabla Session vs JWT](20-tablas-comparativas.md#20-tablas-comparativas)).
+**JSON:** formato estándar de intercambio de datos, basado en texto y legible por humanos (`{"id": 1, "active": true}`). **Cookies:** pequeños datos (máx. ~4KB) que el navegador guarda y envía automáticamente en cada request al mismo dominio. **Sessions:** estado del usuario guardado en el servidor (en memoria o Redis), referenciado por un ID opaco en una cookie — alternativa stateful a JWT (ver [tabla Session vs JWT](20-tablas-comparativas.md#20-tablas-comparativas)).
+
+```javascript
+app.post('/login', async (req, res) => {
+  const sessionId = crypto.randomUUID();
+  await redis.set(`session:${sessionId}`, JSON.stringify({ userId: user.id }), 'EX', 3600);
+  res.cookie('sessionId', sessionId, { httpOnly: true, secure: true }); // el navegador la reenvía sola
+});
+
+app.get('/me', async (req, res) => {
+  const session = await redis.get(`session:${req.cookies.sessionId}`); // el servidor "recuerda" al usuario
+  if (!session) return res.sendStatus(401);
+  res.json(JSON.parse(session));
+});
+```
 
 ## 4.4 REST y Stateless Architecture
 

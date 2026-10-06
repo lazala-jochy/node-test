@@ -26,9 +26,37 @@ Cada capa tiene una única responsabilidad: el **Controller** maneja HTTP, el **
 
 > 💡 El beneficio práctico: puedes cambiar de PostgreSQL a MongoDB, o de Express a Fastify, sin tocar la lógica de negocio — porque esta nunca dependió directamente de esos detalles.
 
+```javascript
+// El dominio define el "port" (una interfaz), sin saber qué lo implementa
+class OrderRepositoryPort { async save(order) { throw new Error('no implementado'); } }
+
+// Un "adapter" concreto implementa ese port contra una tecnología específica
+class PostgresOrderRepository extends OrderRepositoryPort {
+  async save(order) { return db.query('INSERT INTO orders ...', [order]); }
+}
+
+// La lógica de negocio solo conoce el port — se le inyecta el adapter desde afuera
+class CreateOrderUseCase {
+  constructor(orderRepository) { this.orderRepository = orderRepository; } // recibe el port
+  async execute(data) { return this.orderRepository.save(data); }
+}
+// Cambiar de Postgres a MongoDB = escribir un nuevo adapter; CreateOrderUseCase no cambia
+```
+
 ## 9.3 Domain-Driven Design (DDD) y Bounded Context
 
 **Definición:** DDD modela el software alrededor del dominio de negocio real, usando el mismo lenguaje que usan los expertos del negocio ("lenguaje ubicuo"). Un **Bounded Context** es el límite explícito donde un modelo de dominio es válido y consistente — el mismo término (ej. "Cliente") puede significar algo distinto en el contexto de Ventas que en el de Soporte.
+
+```
+Bounded Context "Ventas"          Bounded Context "Soporte"
+┌─────────────────────┐          ┌─────────────────────┐
+│ Cliente              │          │ Cliente              │
+│ - historial de       │          │ - tickets abiertos   │
+│   compras             │          │ - nivel de SLA       │
+│ - límite de crédito   │          │ - agente asignado     │
+└─────────────────────┘          └─────────────────────┘
+```
+Es el MISMO término de negocio ("Cliente"), pero cada contexto solo modela los atributos que le importan a ESE dominio — intentar unificarlo en una sola entidad gigante compartida termina acoplando equipos que no deberían depender entre sí.
 
 **🔥🔥🔥**
 

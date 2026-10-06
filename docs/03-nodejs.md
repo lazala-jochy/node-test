@@ -35,6 +35,23 @@ app.get('/report', (req, res) => { res.json(generateHugeReportSync(data)); });
 
 Confundir "single-threaded" con "no puede manejar concurrencia" es el error conceptual más común: Node maneja concurrencia de I/O excelentemente, pero no paraleliza cómputo por sí solo.
 
+```javascript
+// worker_threads — delega un cálculo CPU-bound a OTRO hilo, sin bloquear el Event Loop principal
+const { Worker } = require('worker_threads');
+const worker = new Worker('./fibonacci-pesado.js', { workerData: { n: 40 } });
+worker.on('message', (result) => console.log('Resultado:', result));
+// el servidor HTTP sigue atendiendo otras requests mientras el worker calcula
+
+// cluster — bifurca el proceso en N copias (una por núcleo de CPU) para repartir carga de requests
+const cluster = require('cluster');
+const os = require('os');
+if (cluster.isPrimary) {
+  os.cpus().forEach(() => cluster.fork()); // cada fork es un proceso Node independiente
+} else {
+  require('./server'); // cada proceso hijo levanta su propia instancia del servidor
+}
+```
+
 **🔥🔥🔥🔥🔥**
 
 ## 3.3 Streams y Buffers
@@ -87,6 +104,11 @@ process.on('SIGTERM', () => { /* graceful shutdown */ });
 | `node_modules` previo | Lo actualiza incrementalmente | Lo borra primero, instala limpio |
 | Uso recomendado | Desarrollo local | Pipelines de CI/CD |
 
+```bash
+npm install     # puede actualizar package-lock.json si una versión ya no encaja con el rango permitido
+npm ci          # falla si package.json y package-lock.json no están sincronizados; nunca modifica el lockfile
+```
+
 **pnpm:** alternativa a npm que usa un store global con symlinks — instalaciones más rápidas y `node_modules` más liviano, evitando duplicar paquetes entre proyectos.
 
 **🔥🔥🔥**
@@ -129,9 +151,19 @@ Kubernetes envía `SIGTERM` y espera un período de gracia antes de forzar `SIGK
 
 ## 3.8 Módulos Built-in de Node
 
-`fs`, `http`/`https`, `path`, `os`, `crypto`, `events` (`EventEmitter`), `stream`, `child_process`, `util`.
+Node incluye módulos nativos listos para usar sin instalar nada: `fs` (archivos), `http`/`https` (servidores/clientes HTTP), `path` (rutas multiplataforma), `os` (info del sistema), `crypto` (hashing/cifrado), `events` (`EventEmitter`), `stream`, `child_process` (lanzar procesos externos), `util`.
 
-`'error'` es un evento especial en `EventEmitter`: si se emite sin ningún listener registrado, Node lanza la excepción y puede tumbar el proceso.
+```javascript
+const { EventEmitter } = require('events');
+const bus = new EventEmitter();
+
+bus.on('order:created', (order) => console.log('Notificar al almacén:', order.id));
+bus.emit('order:created', { id: 42 }); // dispara el listener de forma síncrona
+
+bus.emit('error', new Error('algo falló')); // ❌ sin listener para 'error', Node lanza la excepción y puede tumbar el proceso
+```
+
+`'error'` es un evento especial en `EventEmitter`: si se emite sin ningún listener registrado, Node lo trata como una excepción no capturada.
 
 **🔥🔥🔥**
 

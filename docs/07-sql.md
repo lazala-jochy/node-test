@@ -77,6 +77,27 @@ HAVING COUNT(*) > 5;
 | **One-to-many** | Un registro de A con varios de B |
 | **Many-to-many** | Requiere tabla intermedia (ej. `enrollments`) |
 
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,                          -- primary key
+  email VARCHAR(255) UNIQUE NOT NULL,              -- unique + not null
+  age INT CHECK (age >= 18)                        -- check
+);
+
+CREATE TABLE orders (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id),       -- foreign key: un user tiene muchas orders (one-to-many)
+  total NUMERIC CHECK (total > 0)
+);
+
+-- many-to-many: students <-> courses, vía tabla intermedia
+CREATE TABLE enrollments (
+  student_id INT REFERENCES students(id),
+  course_id INT REFERENCES courses(id),
+  PRIMARY KEY (student_id, course_id)
+);
+```
+
 **🔥🔥🔥🔥**
 
 ## 7.5 Índices
@@ -118,6 +139,18 @@ COMMIT; -- o ROLLBACK si algo falla
 | **Optimistic locking** | No bloquea; usa columna `version`, falla y reintenta si cambió | Baja probabilidad de conflicto |
 | **Pessimistic locking** | Bloquea la fila (`SELECT ... FOR UPDATE`) | Alta probabilidad de conflicto (balances financieros) |
 
+```sql
+-- Pessimistic: bloquea la fila hasta el COMMIT, otra transacción debe esperar
+BEGIN;
+SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+COMMIT;
+
+-- Optimistic: no bloquea; falla si "version" cambió desde que se leyó, y el cliente reintenta
+UPDATE accounts SET balance = balance - 100, version = version + 1
+WHERE id = 1 AND version = 7;  -- 0 filas afectadas ⇒ alguien más la modificó primero, reintentar
+```
+
 **Isolation levels** (menor a mayor aislamiento): `Read Uncommitted` → `Read Committed` → `Repeatable Read` → `Serializable`.
 
 **Deadlock:** dos transacciones se bloquean mutuamente esperando un lock que la otra tiene — el motor detecta y aborta una.
@@ -130,6 +163,19 @@ COMMIT; -- o ROLLBACK si algo falla
 - **2NF:** 1NF + sin dependencias parciales de la PK.
 - **3NF:** 2NF + sin dependencias transitivas.
 - **Denormalización:** duplicar datos deliberadamente para evitar `JOIN`s costosos en lecturas frecuentes.
+
+```sql
+-- ❌ sin normalizar: el nombre del producto se repite en cada fila, riesgo de inconsistencia
+-- order_items(order_id, product_name, product_price, quantity)
+
+-- ✅ normalizado (3NF): el dato del producto vive en un solo lugar
+-- products(id, name, price)
+-- order_items(order_id, product_id, quantity)
+
+-- ✅ denormalización deliberada: guardar el total ya calculado en la orden
+-- para no recalcularlo con un JOIN+SUM en cada lectura del listado de órdenes
+-- orders(id, user_id, total)  ← total se actualiza al crear/editar order_items
+```
 
 **🔥🔥🔥**
 
@@ -153,6 +199,14 @@ const rows = await db.query('SELECT u.*, o.* FROM users u LEFT JOIN orders o ON 
 ## 7.10 Database Migrations
 
 **Definición:** cambios versionados y reproducibles al esquema de la base de datos, aplicados en orden (ej. con `knex`, `Prisma Migrate`, `TypeORM`), que permiten avanzar o revertir el esquema de forma controlada entre entornos.
+
+```javascript
+// 20240115_add_phone_to_users.js — cada migración define cómo avanzar (up) y cómo revertir (down)
+exports.up = (knex) => knex.schema.alterTable('users', (t) => t.string('phone').nullable());
+exports.down = (knex) => knex.schema.alterTable('users', (t) => t.dropColumn('phone'));
+```
+
+Sin migraciones, aplicar el mismo cambio de esquema en desarrollo, staging y producción depende de que alguien lo recuerde ejecutar manualmente en cada entorno — una fuente común de bugs por esquemas desincronizados.
 
 ## 7.11 Consultas de Referencia
 
