@@ -286,13 +286,21 @@ const safe = config && config.value;              // short-circuit con &&
 
 ## 1.7 `this`, `call`, `apply`, `bind`
 
-**Definición:** el valor de `this` depende de **cómo se llama una función**, no de dónde se define (excepto en arrow functions, que heredan `this` léxicamente).
+**¿Qué es `this`?** Piensa en `this` como la pregunta "¿quién me está llamando?". Su valor no depende de dónde escribiste la función, sino de **quién la ejecuta en ese momento**:
 
-| Método | Ejecuta inmediatamente | Argumentos | Retorna |
-|---|---|---|---|
-| `fn.call(thisArg, a, b)` | Sí | Separados por comas | El resultado de `fn` |
-| `fn.apply(thisArg, [a, b])` | Sí | Como array | El resultado de `fn` |
-| `fn.bind(thisArg, a, b)` | No | Separados por comas | Una **nueva función** con `this` fijo |
+```javascript
+const persona = {
+  nombre: "Ana",
+  saludar: function () { return `Hola, soy ${this.nombre}`; },
+};
+
+persona.saludar(); // "Hola, soy Ana" — la llama "persona", así que this = persona
+
+const saludarSuelto = persona.saludar;
+saludarSuelto(); // "Hola, soy undefined" — ahora nadie la llama como objeto, this ya no es persona
+```
+
+La única excepción son las **arrow functions**: ellas no preguntan "¿quién me llama?", sino que copian el `this` de donde fueron escritas (su entorno léxico) y nunca lo cambian:
 
 ```javascript
 const obj = {
@@ -300,9 +308,34 @@ const obj = {
   regular: function () { return this.name; },
   arrow: () => { return this.name; },
 };
-console.log(obj.regular()); // "Node"
-console.log(obj.arrow());   // undefined — hereda el this del módulo, no de obj
+console.log(obj.regular()); // "Node" — this = obj, porque obj.regular() la llamó
+console.log(obj.arrow());   // undefined — this es el del entorno donde se escribió obj, no obj mismo
 ```
+
+**`call`, `apply` y `bind` sirven para controlar manualmente quién es `this`** cuando llamas una función:
+
+| Método | Ejecuta inmediatamente | Argumentos | Retorna |
+|---|---|---|---|
+| `fn.call(thisArg, a, b)` | Sí | Separados por comas | El resultado de `fn` |
+| `fn.apply(thisArg, [a, b])` | Sí | Como array | El resultado de `fn` |
+| `fn.bind(thisArg, a, b)` | No | Separados por comas | Una **nueva función** con `this` fijo |
+
+Ejemplo con la misma función `saludar`, pero ahora forzando qué objeto es `this`:
+
+```javascript
+function saludar(saludo) { return `${saludo}, soy ${this.nombre}`; }
+
+const ana = { nombre: "Ana" };
+const luis = { nombre: "Luis" };
+
+saludar.call(ana, "Hola");        // "Hola, soy Ana"       — se ejecuta ya, argumento suelto
+saludar.apply(luis, ["Hola"]);    // "Hola, soy Luis"       — se ejecuta ya, argumentos en array
+
+const saludarComoAna = saludar.bind(ana);
+saludarComoAna("Hola");           // "Hola, soy Ana"       — no se ejecuta al crearla, this quedó fijo en ana
+```
+
+**En una frase:** `call` y `apply` ejecutan la función al instante con el `this` que tú elijas (solo cambia cómo pasas los argumentos); `bind` no ejecuta nada, solo te devuelve una copia de la función con el `this` ya fijado para usarla después.
 
 **🔥🔥🔥🔥🔥**
 
