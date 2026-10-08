@@ -320,19 +320,29 @@ console.log(obj.arrow());   // undefined — this es el del entorno donde se esc
 | `fn.apply(thisArg, [a, b])` | Sí | Como array | El resultado de `fn` |
 | `fn.bind(thisArg, a, b)` | No | Separados por comas | Una **nueva función** con `this` fijo |
 
-Ejemplo con la misma función `saludar`, pero ahora forzando qué objeto es `this`:
-
 ```javascript
 function saludar(saludo) { return `${saludo}, soy ${this.nombre}`; }
-
 const ana = { nombre: "Ana" };
 const luis = { nombre: "Luis" };
+```
 
-saludar.call(ana, "Hola");        // "Hola, soy Ana"       — se ejecuta ya, argumento suelto
-saludar.apply(luis, ["Hola"]);    // "Hola, soy Luis"       — se ejecuta ya, argumentos en array
+**`call(thisArg, a, b)`** — ejecuta la función *en ese mismo instante*, pero le dices explícitamente quién es `this`. Los argumentos se pasan sueltos, separados por comas.
 
-const saludarComoAna = saludar.bind(ana);
-saludarComoAna("Hola");           // "Hola, soy Ana"       — no se ejecuta al crearla, this quedó fijo en ana
+```javascript
+saludar.call(ana, "Hola"); // "Hola, soy Ana" — se ejecuta ya, this = ana
+```
+
+**`apply(thisArg, [a, b])`** — hace exactamente lo mismo que `call` (ejecuta de inmediato, forzando `this`); la única diferencia es que los argumentos van dentro de un array.
+
+```javascript
+saludar.apply(luis, ["Hola"]); // "Hola, soy Luis" — se ejecuta ya, args en array
+```
+
+**`bind(thisArg, a, b)`** — no ejecuta nada en el momento. Devuelve una **copia nueva** de la función con `this` ya fijado para siempre, para llamarla cuando quieras.
+
+```javascript
+const saludarComoAna = saludar.bind(ana); // no imprime nada todavía
+saludarComoAna("Hola"); // "Hola, soy Ana" — se ejecuta aquí, this ya venía fijo en ana
 ```
 
 **En una frase:** `call` y `apply` ejecutan la función al instante con el `this` que tú elijas (solo cambia cómo pasas los argumentos); `bind` no ejecuta nada, solo te devuelve una copia de la función con el `this` ya fijado para usarla después.
