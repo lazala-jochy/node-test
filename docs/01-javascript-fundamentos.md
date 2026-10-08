@@ -375,20 +375,54 @@ La programación orientada a objetos se apoya en **4 pilares**:
 | **Polymorphism** | Distintas clases responden al mismo método de forma diferente |
 | **Abstraction** | Quien usa el objeto solo ve el "qué hace" (`speak()`), no el "cómo lo hace" por dentro |
 
+**Encapsulation** — el campo `#energy` es privado: solo se puede leer o modificar desde dentro de la clase, nadie de afuera puede tocarlo directamente.
+
 ```javascript
 class Animal {
-  #energy = 100; // encapsulation: campo privado, inaccesible desde fuera
+  #energy = 100;
+  constructor(name) { this.name = name; }
+  getEnergy() { return this.#energy; } // única forma de acceder desde afuera
+}
 
+const animal = new Animal("Rex");
+console.log(animal.getEnergy()); // 100
+console.log(animal.#energy); // ❌ SyntaxError: campo privado, inaccesible desde fuera
+```
+
+**Inheritance** — `Dog` reutiliza el `constructor` y los métodos de `Animal` con `extends`, sin tener que reescribirlos.
+
+```javascript
+class Animal {
   constructor(name) { this.name = name; }
   speak() { return `${this.name} hace un sonido`; }
 }
 
-class Dog extends Animal {       // inheritance: Dog reutiliza el constructor de Animal
-  speak() { return `${this.name} ladra`; } // polymorphism: misma interfaz, comportamiento distinto
+class Dog extends Animal {} // hereda name y speak() sin escribir nada más
+
+console.log(new Dog("Rex").speak()); // "Rex hace un sonido"
+```
+
+**Polymorphism** — `Dog` sobrescribe `speak()`: el mismo método (`speak`) produce resultados distintos según la clase que lo llame.
+
+```javascript
+class Dog extends Animal {
+  speak() { return `${this.name} ladra`; } // mismo nombre de método, comportamiento distinto
 }
 
-// abstraction: el forEach llama a.speak() sin saber si "a" es Animal o Dog, ni cómo está implementado por dentro
 [new Animal("Genérico"), new Dog("Rex")].forEach(a => console.log(a.speak()));
+// "Genérico hace un sonido"
+// "Rex ladra"
+```
+
+**Abstraction** — quien llama `a.speak()` no necesita saber si `a` es `Animal` o `Dog`, ni cómo está escrito el método por dentro; solo conoce que existe `speak()`.
+
+```javascript
+function hacerSonar(animal) {
+  console.log(animal.speak()); // no le importa la clase concreta, solo que tenga speak()
+}
+
+hacerSonar(new Animal("Genérico"));
+hacerSonar(new Dog("Rex"));
 ```
 
 **En una frase:** encapsulation esconde los datos, inheritance reutiliza comportamiento, polymorphism permite que el mismo método se comporte distinto según la clase, y abstraction oculta los detalles internos para que quien use el objeto solo necesite conocer su interfaz.
