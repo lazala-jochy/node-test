@@ -151,6 +151,17 @@ saludaArrow();
 
 **Definición:** una *callback* es una función pasada como argumento a otra para ejecutarse después. Una *higher-order function* recibe y/o retorna funciones (`map`, `filter`, middlewares, decoradores).
 
+```javascript
+// Callback: saludar() recibe otra función y la ejecuta después
+function saludar(nombre, callback) { callback(`Hola, ${nombre}`); }
+saludar("Ana", (mensaje) => console.log(mensaje)); // "Hola, Ana"
+
+// Higher-order function: recibe una función (map) y también retorna una función (multiplicarPor)
+function multiplicarPor(factor) { return (n) => n * factor; }
+const duplicar = multiplicarPor(2);
+[1, 2, 3].map(duplicar); // [2, 4, 6]
+```
+
 ### Funciones Puras y Side Effects
 
 **Definición:** una función pura, dado el mismo input, siempre retorna el mismo output y no modifica nada fuera de su scope (sin I/O, sin mutar parámetros, sin depender de estado externo mutable).
