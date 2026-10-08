@@ -364,7 +364,16 @@ const dog = new Animal("Rex");
 console.log(dog.speak()); // vive en el prototipo, compartido por todas las instancias
 ```
 
-### Classes, Inheritance, Encapsulation, Polymorphism
+### Classes, Inheritance, Encapsulation, Polymorphism, Abstraction
+
+La programación orientada a objetos se apoya en **4 pilares**:
+
+| Pilar OOP | Qué es |
+|---|---|
+| **Encapsulation** | Ocultar el estado interno (`#campo`) y exponer solo lo necesario |
+| **Inheritance** | Una clase reutiliza/extiende el comportamiento de otra (`extends`) |
+| **Polymorphism** | Distintas clases responden al mismo método de forma diferente |
+| **Abstraction** | Quien usa el objeto solo ve el "qué hace" (`speak()`), no el "cómo lo hace" por dentro |
 
 ```javascript
 class Animal {
@@ -374,18 +383,15 @@ class Animal {
   speak() { return `${this.name} hace un sonido`; }
 }
 
-class Dog extends Animal {       // inheritance
+class Dog extends Animal {       // inheritance: Dog reutiliza el constructor de Animal
   speak() { return `${this.name} ladra`; } // polymorphism: misma interfaz, comportamiento distinto
 }
 
+// abstraction: el forEach llama a.speak() sin saber si "a" es Animal o Dog, ni cómo está implementado por dentro
 [new Animal("Genérico"), new Dog("Rex")].forEach(a => console.log(a.speak()));
 ```
 
-| Pilar OOP | Qué es |
-|---|---|
-| **Encapsulation** | Ocultar el estado interno (`#campo`) y exponer solo lo necesario |
-| **Inheritance** | Una clase reutiliza/extiende el comportamiento de otra (`extends`) |
-| **Polymorphism** | Distintas clases responden al mismo método de forma diferente |
+**En una frase:** encapsulation esconde los datos, inheritance reutiliza comportamiento, polymorphism permite que el mismo método se comporte distinto según la clase, y abstraction oculta los detalles internos para que quien use el objeto solo necesite conocer su interfaz.
 
 **🔥🔥🔥**
 
