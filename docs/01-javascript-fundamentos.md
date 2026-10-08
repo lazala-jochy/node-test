@@ -230,6 +230,14 @@ for (let i = 0; i < 3; i++) { setTimeout(() => console.log(i), 0); } // 0, 1, 2
 
 ## 1.6 Destructuring, Spread/Rest, Template Literals, Optional Chaining, Nullish Coalescing
 
+**Destructuring:** extrae valores de un objeto o array y los guarda en variables individuales, en una sola línea. Puedes darles un valor por defecto (`b = 10`, se usa solo si `b` no existe) y juntar lo que sobra con `...rest`.
+
+**Spread (`...`):** "desempaqueta" los elementos de un array u objeto, por ejemplo para copiarlos o unirlos dentro de otro array/objeto nuevo.
+
+**Rest (`...`):** misma sintaxis que spread pero en sentido contrario — agrupa varios argumentos o elementos sueltos en un solo array.
+
+**Template literals (`` ` `` `):** permiten insertar variables dentro de un string con `${variable}`, sin concatenar con `+`.
+
 ```javascript
 const { a, b = 10, ...rest } = { a: 1, c: 2, d: 3 };
 console.log(a, b, rest); // 1 10 { c: 2, d: 3 }
@@ -243,6 +251,10 @@ console.log(`Hola, ${name}!`); // template literal
 
 ### Optional chaining (`?.`) y Nullish coalescing (`??`)
 
+**Optional chaining (`?.`):** intenta acceder a una propiedad anidada y, si en el camino algo es `null` o `undefined`, detiene la lectura y devuelve `undefined` en vez de lanzar un error.
+
+**Nullish coalescing (`??`):** devuelve el valor de la derecha solo si el de la izquierda es `null` o `undefined` — a diferencia de `||`, que lo reemplaza con cualquier valor "falsy" (`0`, `""`, `false`, etc.).
+
 > 💡 Confundir `??` con `||` es el error más frecuente al definir valores por defecto cuando `0` o `""` son resultados legítimos.
 
 ```javascript
@@ -255,6 +267,12 @@ console.log(count ?? 10); // ✅ 0  — correcto, 0 no es null/undefined
 ```
 
 ### Ternario y Short-circuit Evaluation
+
+**Ternario (`? :`):** forma corta de un `if/else` que devuelve un valor — `condición ? valorSiTrue : valorSiFalse`.
+
+**Short-circuit con `||`:** evalúa el lado izquierdo y, si es "falsy" (`0`, `""`, `null`, `undefined`, `false`), usa el lado derecho; si no, se queda con el izquierdo.
+
+**Short-circuit con `&&`:** evalúa el lado izquierdo y, solo si es "truthy", continúa y devuelve el lado derecho — útil para acceder algo solo si lo anterior existe.
 
 ```javascript
 const label = isActive ? "activo" : "inactivo"; // ternario
