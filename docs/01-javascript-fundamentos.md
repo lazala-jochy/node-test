@@ -433,15 +433,23 @@ hacerSonar(new Dog("Rex"));
 
 ## 1.9 Módulos: CommonJS vs ES Modules
 
+**¿Qué es un módulo?** Es un archivo que exporta código (funciones, variables) para que otros archivos lo importen y lo usen. Node soporta dos sistemas de módulos, con sintaxis distinta:
+
+**CommonJS** — el sistema clásico de Node, activo por defecto en archivos `.js`. Usa `require()` para importar y `module.exports` para exportar. Carga de forma **síncrona**: al escribir `require("./archivo")`, Node se detiene, ejecuta ese archivo completo, y recién después continúa.
+
+**ES Modules (ESM)** — el estándar moderno de JavaScript (el mismo del navegador). Usa `import` / `export`. Para activarlo en Node hace falta `"type": "module"` en el `package.json`, o la extensión `.mjs`. El motor analiza los `import`/`export` **antes** de ejecutar nada (análisis estático), lo que permite optimizaciones y soporta carga asíncrona.
+
 | Concepto | CommonJS | ES Modules (ESM) |
 |---|---|---|
 | Sintaxis | `require()` / `module.exports` | `import` / `export` |
 | Carga | Síncrona | Análisis estático, soporta carga asíncrona |
 | Activación | Default en `.js` | Requiere `"type": "module"` o `.mjs` |
 
+**El bug clásico de CommonJS:** `module.exports` es el objeto real que recibe quien hace `require(...)`. La variable `exports` es solo un **alias** que apunta a ese mismo objeto, para no escribir `module.exports` todo el tiempo. Si reasignas `exports = {...}`, dejas de apuntar al objeto compartido — creas uno nuevo que nadie importa, mientras `module.exports` (lo que de verdad se exporta) sigue intacto, sin tus cambios.
+
 ```javascript
 exports = { hello: () => "hi" };      // ❌ rompe la referencia — NO se exporta
-module.exports.world = () => "world"; // ✅ correcto
+module.exports.world = () => "world"; // ✅ correcto — modifica el objeto real que se exporta
 ```
 
 **🔥🔥🔥🔥**
