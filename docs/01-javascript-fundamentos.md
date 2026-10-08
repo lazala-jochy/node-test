@@ -132,6 +132,9 @@ function saluda() { console.log("hola"); }
 
 saludaExpr(); // ❌ TypeError
 var saludaExpr = function () { console.log("hola"); };
+
+const saludaArrow = () => console.log("hola"); // no tiene this propio, hereda el del contexto léxico
+saludaArrow();
 ```
 
 **🔥🔥🔥🔥**
