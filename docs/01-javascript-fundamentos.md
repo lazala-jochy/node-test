@@ -126,11 +126,11 @@ console.log(null == undefined); // true  (única excepción "especial" del lengu
 | Function expression | Solo la variable se hoistea | Sí | Asignación condicional |
 | Arrow function | Solo la variable se hoistea | No — hereda `this` léxico | Callbacks, métodos que necesitan `this` externo |
 
-**Function declaration:** se hoistea completa — JavaScript sube toda la función (no solo el nombre) antes de ejecutar el código. Por eso puedes llamarla antes de donde la escribiste. Tiene `this` propio y dinámico (cambia según quién la llame). Úsala para las funciones principales de tu módulo.
+**Function declaration:** se escribe así: `function nombre() { ... }`. Se hoistea completa — JavaScript sube toda la función (no solo el nombre) antes de ejecutar el código. Por eso puedes llamarla antes de donde la escribiste. Tiene `this` propio y dinámico (cambia según quién la llame). Úsala para las funciones principales de tu módulo.
 
-**Function expression:** solo se hoistea la variable, no el contenido. Al inicio del archivo la variable existe pero vale `undefined`, todavía no es una función — por eso falla si la llamas antes de la línea donde se asigna. También tiene `this` propio y dinámico. Se usa para asignar una función condicionalmente.
+**Function expression:** se escribe así: `const nombre = function () { ... }`. Solo se hoistea la variable, no el contenido. Al inicio del archivo la variable existe pero vale `undefined`, todavía no es una función — por eso falla si la llamas antes de la línea donde se asigna. También tiene `this` propio y dinámico. Se usa para asignar una función condicionalmente.
 
-**Arrow function:** igual que expression, solo se hoistea la variable, así que tampoco puedes llamarla antes de definirla. La diferencia clave es el `this`: no tiene `this` propio, usa el del lugar donde fue escrita (léxico), no el de quien la llama. Por eso es ideal para callbacks o métodos que necesitan "recordar" el `this` externo (por ejemplo, dentro de un `setTimeout` o un `.map()` dentro de una clase).
+**Arrow function:** se escribe así: `const nombre = () => { ... }`. Igual que expression, solo se hoistea la variable, así que tampoco puedes llamarla antes de definirla. La diferencia clave es el `this`: no tiene `this` propio, usa el del lugar donde fue escrita (léxico), no el de quien la llama. Por eso es ideal para callbacks o métodos que necesitan "recordar" el `this` externo (por ejemplo, dentro de un `setTimeout` o un `.map()` dentro de una clase).
 
 **En una frase:** declaration es segura de llamar en cualquier orden; expression y arrow function dependen del orden de ejecución; y arrow function es la única que no crea su propio `this`.
 
